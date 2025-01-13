@@ -4,7 +4,6 @@
   package:
     state: present
     name: "{{ archive_packages }}"
-  become: true
   tags:
     - archives
     - utilities
@@ -14,7 +13,6 @@
   package:
     state: present
     name: "{{ codecs_packages }}"
-  become: true
   tags:
     - codecs
     - utilities
@@ -24,7 +22,6 @@
   package:
     state: present
     name: "{{ cli_utilities }}"
-  become: true
   tags:
     - cli
     - utilities
@@ -34,7 +31,6 @@
   package:
     state: present
     name: "{{ graphical_applications }}"
-  become: true
   tags:
     - gui
     - utilities

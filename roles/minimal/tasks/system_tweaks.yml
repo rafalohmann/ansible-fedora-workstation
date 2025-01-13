@@ -5,7 +5,6 @@
   command: cat /etc/mtab
   changed_when: false
   register: mount_options
-  become: true
 
 - name: Ensure fstab options are consistent
   block:
@@ -41,14 +40,12 @@
       with_items: "{{ mount_options.stdout_lines }}"
       when:
         - item.split(' ')[1] in ['/', '/boot', '/home']
-  become: true
 
 - name: Enable and start fstrim.timer for discard trim
   systemd:
     name: fstrim.timer
     state: started
     enabled: true
-  become: true
 
 - name: Configure IO Schedulers at boot
   blockinfile:
@@ -58,7 +55,6 @@
       bfq
       mq-deadline
       kyber-iosched
-  become: true
 
 - name: Optimize DNF performance
   blockinfile:
@@ -69,4 +65,3 @@
       fastestmirror=true
       install_weak_deps=false
       max_parallel_downloads={{ ansible_processor_vcpus | default(4) }}
-  become: true

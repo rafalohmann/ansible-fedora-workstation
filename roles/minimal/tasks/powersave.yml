@@ -14,7 +14,6 @@
       - thermald # Thermal throttling daemon
       - tlp # Advanced power management for laptops
       - tlp-rdw # Radio device support for TLP
-  become: true
 
 # Enable and start power management services
 - name: Enable and start power management daemons
@@ -23,7 +22,6 @@
     state: started # Start the service immediately
     enabled: yes # Ensure service starts on boot
     daemon_reload: yes # Reload systemd configuration
-  become: true
   with_items:
     - powertop.service # Service for power consumption monitoring
     - thermald.service # Service for thermal management
@@ -49,7 +47,6 @@
     - { name: vm.dirty_writeback_centisecs, value: 60000 } # Delay for write-backs
     - { name: vm.dirty_expire_centisecs, value: 60000 } # Expiration for dirty pages
     - { name: fs.inotify.max_user_watches, value: 524288 } # Increase watch limit for modern apps
-  become: true
 
 # Blacklist unnecessary kernel modules
 - name: Blacklist unused kernel modules
@@ -57,7 +54,6 @@
     path: /etc/modprobe.d/blacklist.conf
     create: yes
     line: "blacklist intel_powerclamp" # Prevent unnecessary CPU power clamping
-  become: true
 
 # Optimize Intel GPU driver settings
 - name: Set Intel GPU driver options
@@ -65,7 +61,6 @@
     path: /etc/modprobe.d/i915.conf
     create: yes
     line: "options i915 disable_power_well=0 enable_dc=2 enable_psr=1 enable_rc6=7 enable_fbc=1 powersave=1 enable_guc=3 enable_dpcd_backlight=1"
-  become: true
 
 # Optimize Intel HDA sound driver settings
 - name: Set Intel HDA driver options
@@ -73,7 +68,6 @@
     path: /etc/modprobe.d/snd_hda_intel.conf
     create: yes
     line: "options snd_hda_intel power_save_controller=Y power_save=1" # Reduce audio power consumption
-  become: true
 
 # Optimize Intel Ethernet driver settings
 - name: Set Intel Ethernet driver options
@@ -81,7 +75,6 @@
     path: /etc/modprobe.d/e1000e.conf
     create: yes
     line: "options e1000e SmartPowerDownEnable=1" # Enable power-saving for Intel Ethernet
-  become: true
 
 # Optimize Intel WiFi driver settings
 - name: Set Intel WiFi driver options
@@ -89,7 +82,6 @@
     path: /etc/modprobe.d/iwlwifi.conf
     create: yes
     line: "options iwlwifi power_save=Y power_level=5 iwlmvm power_scheme=3" # Aggressive WiFi power saving
-  become: true
 
 # Add UDev rules for automatic power management of devices
 - name: Configure UDev rules for power saving
@@ -107,7 +99,6 @@
       ACTION=="add", SUBSYSTEM=="net", KERNEL=="enp*", RUN+="/usr/sbin/ethtool -s %k wol d"
       ACTION=="add", SUBSYSTEM=="net", KERNEL=="wlp*", RUN+="/usr/sbin/ethtool -s %k wol d"
       ACTION=="add", SUBSYSTEM=="net", KERNEL=="wlp*", RUN+="/usr/sbin/iw dev %k set power_save on"
-  become: true
 
 # Add kernel parameters for power management
 - name: Deploy kernel power management flags
@@ -125,4 +116,3 @@
     - { option: pcie_aspm.policy, value: powersupersave }
     - { option: scsi_mod.use_blk_mq, value: 1 }
   register: grub_setup
-  become: true

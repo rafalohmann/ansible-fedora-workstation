@@ -3,7 +3,6 @@
   dnf:
     name: "*"
     state: latest
-  become: true
   tags:
     - base_distro
     - minimal

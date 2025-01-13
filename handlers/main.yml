@@ -12,4 +12,3 @@
     - "grub2-mkconfig -o /boot/grub2/grub.cfg" # Regenerate GRUB configuration
     - "dracut --force --regenerate-all -v" # Rebuild initramfs to include new changes
   when: grub_setup.changed
-  become: true

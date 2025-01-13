@@ -1,3 +1,8 @@
 # Localhost for running playbooks locally (e.g., on your Fedora workstation)
-[local]
-localhost ansible_connection=local
+all:
+  children:
+    local:
+      hosts:
+        localhost:
+          ansible_connection: local
+          ansible_become: true
