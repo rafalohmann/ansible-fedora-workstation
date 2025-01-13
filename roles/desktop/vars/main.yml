@@ -1,0 +1,30 @@
+---
+# Base GNOME desktop packages
+base_desktop_packages:
+  - gdm # GNOME Display Manager
+  - gnome-shell # Core GNOME Shell environment
+  - gnome-tweak-tool # GNOME Tweak Tool for customization
+  - nautilus # GNOME file manager
+  - gnome-terminal # GNOME Terminal emulator
+  - gnome-disk-utility # Disk management GUI
+
+# Additional utilities to enhance GNOME desktop experience
+additional_desktop_utilities:
+  - dconf-editor # Graphical editor for dconf settings
+
+# Flatpak utilities to install
+flatpak_utilities:
+  - com.mattjakeman.ExtensionManager # Extension Manager for GNOME from Flathub
+
+# GNOME extensions to improve usability and aesthetics
+gnome_extensions:
+  - url: "https://extensions.gnome.org/extension/3193/blur-my-shell/"
+    name: "blur-my-shell"
+  - url: "https://extensions.gnome.org/extension/4839/clipboard-history/"
+    name: "clipboard-history"
+  - url: "https://extensions.gnome.org/extension/1160/dash-to-panel/"
+    name: "dash-to-panel"
+
+# Window manager preferences
+gnome_wm_preferences:
+  button_layout: ':minimize,maximize,close'

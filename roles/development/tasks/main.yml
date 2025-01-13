@@ -1,0 +1,44 @@
+---
+- name: Install development tools
+  dnf:
+    name: "{{ dev_tools }}"
+  tags:
+    - dev_tools
+    - development
+
+- name: Install additional tools using scripts
+  shell: "{{ item }}"
+  loop: "{{ additional_tool_scripts }}"
+  tags:
+    - dev_tools
+    - development
+
+- name: Initialize Pyenv and install the latest LTS Python version
+  shell: |
+    export PATH="$HOME/.pyenv/bin:$PATH"
+    eval "$(pyenv init --path)"
+    eval "$(pyenv init -)"
+    pyenv install --list | grep -E '^  [0-9]+\.[0-9]+\.0$' | tail -n 1 | xargs pyenv install -s
+    pyenv global $(pyenv install --list | grep -E '^  [0-9]+\.[0-9]+\.0$' | tail -n 1)
+  environment:
+    PYENV_ROOT: "$HOME/.pyenv"
+  args:
+    executable: /bin/bash
+  tags:
+    - pyenv
+    - dev_tools
+    - development
+
+- name: Initialize NVM and install the latest LTS Node.js version
+  shell: |
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+    nvm install --lts
+    nvm use --lts
+    nvm alias default lts/*
+  args:
+    executable: /bin/bash
+  tags:
+    - nvm
+    - dev_tools
+    - development

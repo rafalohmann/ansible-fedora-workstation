@@ -1,0 +1,17 @@
+---
+dev_tools:
+  - git
+  - nano
+  - codium
+  - dbeaver
+  - postman
+  - filezilla
+  - gcloud-sdk
+  - wireguard-tools
+
+additional_tool_scripts:
+  - "curl https://pyenv.run | bash"
+  - "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash"
+  - "curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh"
+  - "dnf config-manager --add-repo https://packages.gitkraken.com/gitkraken.repo && dnf install gitkraken -y"
+  - "dnf install xpipe -y"

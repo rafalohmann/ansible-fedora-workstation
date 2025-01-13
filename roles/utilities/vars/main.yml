@@ -1,0 +1,34 @@
+# Utilities for working with archives
+archive_packages:
+  - cabextract # Extract Microsoft Cabinet files
+  - lzip # LZ compression utility
+  - p7zip # 7z compression tool
+  - p7zip-plugins # Plugins for 7z
+  - unzip # Extract ZIP files
+  - zstd # Modern compression utility
+
+# Media codecs for audio and video playback
+codecs_packages:
+  - compat-ffmpeg28 # Compatibility layer for ffmpeg
+  - flac # Free Lossless Audio Codec
+  - ffmpeg # Multimedia framework
+  - gstreamer1-libav # GStreamer plugin for libav
+  - gstreamer1-plugins-bad-freeworld # Additional GStreamer plugins
+  - gstreamer1-plugins-ugly # Proprietary GStreamer plugins
+  - intel-media-driver # Intel GPU video decoding
+  - libva-utils # Tools for VAAPI video acceleration
+  - libvdpau-va-gl # VDPAU backend for VA-API
+
+# Essential CLI tools
+cli_utilities:
+  - wget # Utility for downloading files from the web
+  - curl # Command-line tool for transferring data with URLs
+  - htop # Interactive process viewer
+
+# Graphical applications
+graphical_applications:
+  - google-chrome-stable # Google Chrome browser
+  - libreoffice # Office suite
+  - vlc # Media player
+  - flameshot # Screenshot tool
+  - nemo # File manager

@@ -1,0 +1,123 @@
+---
+# Hardening Configuration
+
+# SSH Hardening
+- name: Configure SSH security settings
+  blockinfile:
+    path: /etc/ssh/sshd_config
+    block: |
+      # Disable root login to prevent attackers from brute-forcing the root account.
+      PermitRootLogin no
+
+      # Disable host-based authentication as it relies on unencrypted .rhosts files.
+      HostbasedAuthentication no
+
+      # Disable password-based authentication to enforce the use of secure SSH keys.
+      PasswordAuthentication no
+
+      # Use only SSH Protocol 2, which is more secure than Protocol 1.
+      Protocol 2
+  notify: restart_ssh
+  validate: /usr/sbin/sshd -t -f %s
+
+# Filesystem Hardening
+- name: Harden filesystem mounts
+  block:
+    - name: Harden filesystem mounts with secure options
+      mount:
+        path: "{{ item }}"
+        state: mounted
+        opts: "{{ mount_options[item] }}"
+        fstype: "{{ mount_fstype[item] | default('ext4') }}" # Default to ext4 if no type is specified
+      loop:
+        - /boot
+        - /dev/shm
+        - /home
+        - /tmp
+        - /var
+        - /var/tmp
+      vars:
+        mount_options:
+          /boot: "ro,nodev,noexec,nosuid" # Read-only to prevent tampering; no device, exec, or SUID files.
+          /dev/shm: "nodev,noexec,nosuid" # Prevent misuse of shared memory for attacks.
+          /home: "nodev" # Block devices to protect user home directories.
+          /tmp: "nodev,noexec,nosuid" # Prevent malicious scripts or device misuse in /tmp.
+          /var: "nodev" # No devices in /var, which stores variable files.
+          /var/tmp: "nodev,noexec,nosuid" # Same protections as /tmp for temporary files.
+        mount_fstype:
+          /boot: "ext4"
+          /dev/shm: "tmpfs"
+          /tmp: "tmpfs"
+          /var/tmp: "tmpfs"
+    - name: Ensure /boot is remounted as read-only after updates
+      mount:
+        path: /boot
+        state: mounted
+        opts: "ro,nodev,noexec,nosuid"
+        fstype: ext4
+        remount: yes
+      when: update_completed | default(false) # Conditional remount if an update was applied
+    - name: Ensure critical system files are immutable
+      command: chattr +i {{ item }}
+      loop:
+        - /etc/fstab
+        - /boot/grub2/grub.cfg
+        - /etc/grub.d
+
+# Periodic Audit of Mounts
+- name: Audit mounted filesystems for compliance
+  command: mount | grep -E '(nosuid|nodev|noexec)'
+  register: mount_audit
+  changed_when: false
+
+# SELinux Enforcement
+- name: Ensure SELinux is in enforcing mode
+  selinux:
+    policy: targeted
+    state: enforcing
+
+# Sysctl Hardening
+- name: Apply sysctl security parameters
+  sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    state: present
+  loop:
+    - { name: kernel.randomize_va_space, value: 2 } # Enable Address Space Layout Randomization (ASLR).
+    - { name: kernel.dmesg_restrict, value: 1 } # Restrict access to kernel logs to root users.
+    - { name: kernel.kptr_restrict, value: 2 } # Fully hide kernel pointers, ensuring stronger protection.
+    - { name: kernel.sysrq, value: 0 } # Disable sysrq key to prevent unauthorized debug command execution.
+    - { name: fs.protected_symlinks, value: 1 } # Prevent symlink-based privilege escalation.
+    - { name: fs.protected_hardlinks, value: 1 } # Restrict hardlink usage to prevent unauthorized file access.
+    - { name: net.ipv4.conf.all.rp_filter, value: 1 } # Enable source address validation to prevent IP spoofing.
+    - { name: net.ipv4.conf.all.accept_redirects, value: 0 } # Disable ICMP redirects to prevent MITM attacks.
+    - { name: net.ipv4.conf.all.secure_redirects, value: 0 } # Disable secure ICMP redirects.
+    - { name: net.ipv4.tcp_syncookies, value: 1 } # Enable TCP SYN cookies to prevent SYN flood attacks.
+    - { name: net.ipv6.conf.all.disable_ipv6, value: 1 } # Disable IPv6 if not required to reduce attack surface.
+  tags:
+    - sysctl
+    - hardening
+
+# GRUB Hardening
+- name: Harden GRUB configuration
+  lineinfile:
+    path: /etc/default/grub
+    regexp: "^GRUB_CMDLINE_LINUX="
+    line: 'GRUB_CMDLINE_LINUX="mitigations=auto lockdown=confidentiality selinux=1 spectre_v2=retpoline pti=on"'
+    backup: yes
+  notify: update_grub
+
+# Permission Hardening
+- name: Restrict permissions on sensitive files
+  file:
+    path: "{{ item.path }}"
+    owner: root
+    group: root
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: /etc/passwd, mode: "0644" } # Read-only for system accounts.
+    - { path: /etc/shadow, mode: "0640" } # Restricted access for authorized administrators only.
+    - { path: /etc/group, mode: "0644" } # Read-only for group information.
+    - { path: /etc/gshadow, mode: "0640" } # Restricted access for authorized administrators only.
+    - { path: /etc/security/limits.conf, mode: "0644" } # Read-only for security limits.
+    - { path: /boot/grub2/grub.cfg, mode: "0400" } # Read-only for GRUB configuration to prevent tampering.

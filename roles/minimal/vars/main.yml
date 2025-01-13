@@ -1,0 +1,33 @@
+---
+# Base packages required for a functional minimal Fedora system
+base_packages:
+  installed_by_default:
+    - "@core" # Core system utilities
+    - "@fonts" # Font support
+    - "@hardware-support" # Hardware drivers and support tools
+    - "@networkmanager-submodules" # Networking support with NetworkManager
+    - "@printing" # Printer drivers and management
+    - "@x86-baremetal-tools" # x86-specific system tools
+    - NetworkManager-wifi # Wi-Fi management tools
+    - bash-completion # Tab completion for Bash
+    - glibc-all-langpacks # Support for all locales
+    - kernel-headers # Required for building kernel modules
+    - nm-connection-editor # GUI for managing network connections
+    - openssh-askpass # GUI for SSH passphrase prompts
+    - pulseaudio-utils # PulseAudio tools for sound control
+
+  optional:
+    - cryptsetup # Disk encryption management tools
+    - earlyoom # Out-of-memory killer
+
+# X.org and display-related packages for graphical interface support
+xorg_packages:
+  installed_by_default:
+    - "@base-x" # Base X server packages
+    - "@firefox" # Web browser
+    - libappindicator # Indicators for applications
+
+  optional:
+    - xgamma # Adjust gamma levels
+    - xmodmap # Modify keymaps and pointer buttons
+    - zram # RAM compression for low-memory systems

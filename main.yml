@@ -1,0 +1,10 @@
+---
+- name: Fedora 41+ Workstation Setup
+  hosts: localhost
+  become: true
+  roles:
+    - desktop
+    - development
+    - minimal
+    - security
+    - utilities

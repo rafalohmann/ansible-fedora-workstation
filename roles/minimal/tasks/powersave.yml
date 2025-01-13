@@ -1,0 +1,128 @@
+---
+# Power Management Configuration for Fedora (Optimized for Laptops)
+
+# Install necessary power management tools and utilities
+- name: Install Power Management Tools
+  package:
+    state: present
+    name:
+      - acpi # ACPI utilities for power and thermal management
+      - hdparm # Manage HDD power settings
+      - lm_sensors # Monitor hardware sensors
+      - msr-tools # Manage CPU Model-Specific Registers
+      - powertop # Tool for measuring power consumption
+      - thermald # Thermal throttling daemon
+      - tlp # Advanced power management for laptops
+      - tlp-rdw # Radio device support for TLP
+  become: true
+
+# Enable and start power management services
+- name: Enable and start power management daemons
+  systemd:
+    name: "{{ item }}"
+    state: started # Start the service immediately
+    enabled: yes # Ensure service starts on boot
+    daemon_reload: yes # Reload systemd configuration
+  become: true
+  with_items:
+    - powertop.service # Service for power consumption monitoring
+    - thermald.service # Service for thermal management
+    - tlp.service # Advanced laptop power management
+
+# Apply sysctl settings for system performance and power optimization
+- name: Configure sysctl for power savings
+  sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    sysctl_set: yes # Persist changes in /etc/sysctl.conf
+    state: present
+    reload: yes # Reload sysctl after changes
+  with_items:
+    - { name: vm.laptop_mode, value: 5 } # Aggressive laptop power mode
+    - { name: kernel.nmi_watchdog, value: 0 } # Disable NMI watchdog for power saving
+    - { name: vm.swappiness, value: 5 } # Minimize swap usage
+    - { name: vm.oom_kill_allocating_task, value: 1 } # Prefer OOM killing task allocation
+    - { name: vm.block_dump, value: 1 } # Log block I/O operations
+    - { name: vm.vfs_cache_pressure, value: 100 } # Balance between reclaiming inodes/dentries
+    - { name: vm.dirty_ratio, value: 90 } # High dirty page ratio for writes
+    - { name: vm.dirty_background_ratio, value: 50 } # Trigger write-back sooner
+    - { name: vm.dirty_writeback_centisecs, value: 60000 } # Delay for write-backs
+    - { name: vm.dirty_expire_centisecs, value: 60000 } # Expiration for dirty pages
+    - { name: fs.inotify.max_user_watches, value: 524288 } # Increase watch limit for modern apps
+  become: true
+
+# Blacklist unnecessary kernel modules
+- name: Blacklist unused kernel modules
+  lineinfile:
+    path: /etc/modprobe.d/blacklist.conf
+    create: yes
+    line: "blacklist intel_powerclamp" # Prevent unnecessary CPU power clamping
+  become: true
+
+# Optimize Intel GPU driver settings
+- name: Set Intel GPU driver options
+  lineinfile:
+    path: /etc/modprobe.d/i915.conf
+    create: yes
+    line: "options i915 disable_power_well=0 enable_dc=2 enable_psr=1 enable_rc6=7 enable_fbc=1 powersave=1 enable_guc=3 enable_dpcd_backlight=1"
+  become: true
+
+# Optimize Intel HDA sound driver settings
+- name: Set Intel HDA driver options
+  lineinfile:
+    path: /etc/modprobe.d/snd_hda_intel.conf
+    create: yes
+    line: "options snd_hda_intel power_save_controller=Y power_save=1" # Reduce audio power consumption
+  become: true
+
+# Optimize Intel Ethernet driver settings
+- name: Set Intel Ethernet driver options
+  lineinfile:
+    path: /etc/modprobe.d/e1000e.conf
+    create: yes
+    line: "options e1000e SmartPowerDownEnable=1" # Enable power-saving for Intel Ethernet
+  become: true
+
+# Optimize Intel WiFi driver settings
+- name: Set Intel WiFi driver options
+  lineinfile:
+    path: /etc/modprobe.d/iwlwifi.conf
+    create: yes
+    line: "options iwlwifi power_save=Y power_level=5 iwlmvm power_scheme=3" # Aggressive WiFi power saving
+  become: true
+
+# Add UDev rules for automatic power management of devices
+- name: Configure UDev rules for power saving
+  blockinfile:
+    path: /etc/udev/rules.d/powersave.rules
+    create: yes
+    block: |
+      ACTION=="add", SUBSYSTEM=="pci", ATTR{power/control}="auto"
+      ACTION=="add", SUBSYSTEM=="ahci", ATTR{power/control}="auto"
+      ACTION=="add", SUBSYSTEM=="scsi_host", KERNEL=="host*", ATTR{link_power_management_policy}="min_power"
+      ACTION=="add", SUBSYSTEM=="scsi", ATTR{power/control}="auto"
+      ACTION=="add", SUBSYSTEM=="acpi", ATTR{power/control}="auto"
+      ACTION=="add", SUBSYSTEM=="block", ATTR{power/control}="auto"
+      ACTION=="add", SUBSYSTEM=="i2c", ATTR{power/control}="auto"
+      ACTION=="add", SUBSYSTEM=="net", KERNEL=="enp*", RUN+="/usr/sbin/ethtool -s %k wol d"
+      ACTION=="add", SUBSYSTEM=="net", KERNEL=="wlp*", RUN+="/usr/sbin/ethtool -s %k wol d"
+      ACTION=="add", SUBSYSTEM=="net", KERNEL=="wlp*", RUN+="/usr/sbin/iw dev %k set power_save on"
+  become: true
+
+# Add kernel parameters for power management
+- name: Deploy kernel power management flags
+  replace:
+    path: /etc/default/grub
+    regexp: '^(GRUB_CMDLINE_LINUX=(?:(?![" ]{{ item.option | regex_escape }}=).)*)(?:[" ]{{ item.option | regex_escape }}=\S+)?(.*")$'
+    replace: '\1 {{ item.option }}={{ item.value }}\2'
+    backup: true # Backup the GRUB configuration file before modifications
+  with_items:
+    - { option: drm.debug, value: 0 }
+    - { option: drm.vblankoffdelay, value: 1 }
+    - { option: mmc_mod.use_blk_mq, value: 1 }
+    - { option: nmi_watchdog, value: 0 }
+    - { option: pcie_aspm, value: force }
+    - { option: pcie_aspm.policy, value: powersupersave }
+    - { option: scsi_mod.use_blk_mq, value: 1 }
+  register: grub_setup
+  become: true

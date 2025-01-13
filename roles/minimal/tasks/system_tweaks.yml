@@ -1,0 +1,72 @@
+---
+# System Tweaks
+
+- name: Get mounted filesystems
+  command: cat /etc/mtab
+  changed_when: false
+  register: mount_options
+  become: true
+
+- name: Ensure fstab options are consistent
+  block:
+    - name: Ensure fstab uses noatime
+      mount:
+        path: "{{ item.split(' ')[1] }}"
+        state: mounted
+        fstype: "{{ item.split(' ')[2] }}"
+        src: "{{ item.split(' ')[0] }}"
+        opts: "{{ item.split(' ')[3].split(',') | union(['noatime']) | unique | join(',') }}"
+      with_items: "{{ mount_options.stdout_lines }}"
+      when:
+        - item.split(' ')[1] in ['/', '/boot', '/home']
+
+    - name: Ensure fstab uses nodiratime
+      mount:
+        path: "{{ item.split(' ')[1] }}"
+        state: mounted
+        fstype: "{{ item.split(' ')[2] }}"
+        src: "{{ item.split(' ')[0] }}"
+        opts: "{{ item.split(' ')[3].split(',') | union(['nodiratime']) | unique | join(',') }}"
+      with_items: "{{ mount_options.stdout_lines }}"
+      when:
+        - item.split(' ')[1] in ['/', '/boot', '/home']
+
+    - name: Ensure fstab uses discard
+      mount:
+        path: "{{ item.split(' ')[1] }}"
+        state: mounted
+        fstype: "{{ item.split(' ')[2] }}"
+        src: "{{ item.split(' ')[0] }}"
+        opts: "{{ item.split(' ')[3].split(',') | union(['discard']) | unique | join(',') }}"
+      with_items: "{{ mount_options.stdout_lines }}"
+      when:
+        - item.split(' ')[1] in ['/', '/boot', '/home']
+  become: true
+
+- name: Enable and start fstrim.timer for discard trim
+  systemd:
+    name: fstrim.timer
+    state: started
+    enabled: true
+  become: true
+
+- name: Configure IO Schedulers at boot
+  blockinfile:
+    path: /etc/modules-load.d/iosched.conf
+    create: true
+    block: |
+      bfq
+      mq-deadline
+      kyber-iosched
+  become: true
+
+- name: Optimize DNF performance
+  blockinfile:
+    path: /etc/dnf/dnf.conf
+    create: true
+    block: |
+      deltarpm=true
+      fastestmirror=true
+      install_weak_deps=false
+      max_parallel_downloads={{ ansible_processor_vcpus | default(4) }}
+  become: true

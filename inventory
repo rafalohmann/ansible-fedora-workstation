@@ -1,0 +1,3 @@
+# Localhost for running playbooks locally (e.g., on your Fedora workstation)
+[local]
+localhost ansible_connection=local

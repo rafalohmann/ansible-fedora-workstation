@@ -1,0 +1,64 @@
+---
+# Install base GNOME desktop packages and utilities
+# These provide essential components and tools for a full GNOME experience.
+- name: Install base desktop packages
+  dnf:
+    name: "{{ base_desktop_packages }}"
+    state: present
+  tags:
+    - desktop_packages
+    - desktop
+
+- name: Install additional desktop utilities
+  dnf:
+    name: "{{ additional_desktop_utilities }}"
+    state: present
+  tags:
+    - desktop_utilities
+    - desktop
+
+# Configure GNOME for graphical boot target
+# This ensures the system boots into a graphical user interface by default.
+- name: Set graphical target for boot
+  file:
+    src: /usr/lib/systemd/system/graphical.target
+    dest: /etc/systemd/system/default.target
+    state: link
+  become: true
+  tags:
+    - boot_graphical_target
+    - desktop
+
+# Manage GNOME extensions for enhanced desktop functionality
+- name: Fetch and install GNOME extensions
+  ansible.builtin.include_tasks: gnome_extension_install.yml
+  loop: "{{ gnome_extensions }}"
+  loop_control:
+    label: "{{ item.url }}"
+  tags:
+    - gnome_extensions
+    - desktop
+
+# Install Flatpak utilities
+- name: Install Flatpak utilities
+  shell: |
+    for app in {{ flatpak_utilities | join(' ') }}; do
+      flatpak install -y flathub "$app"
+    done
+  args:
+    executable: /bin/bash
+  tags:
+    - flatpak
+    - desktop_utilities
+    - desktop
+
+# Customize GNOME window manager preferences
+# Adds maximize and minimize buttons for improved usability.
+- name: Add maximize and minimize buttons
+  shell: |
+    dconf write /org/gnome/desktop/wm/preferences/button-layout "'{{ gnome_wm_preferences.button_layout }}'"
+  args:
+    executable: /bin/bash
+  tags:
+    - gnome_config
+    - desktop

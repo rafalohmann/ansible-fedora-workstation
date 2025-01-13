@@ -1,0 +1,49 @@
+---
+# Add RPM Fusion repositories (free and non-free)
+- name: Install the RPM Fusion and fonts repo packages
+  dnf:
+    state: present
+    disable_gpg_check: yes # RPM Fusion may have GPG key issues during direct downloads
+    name:
+      - https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-{{ ansible_facts.distribution_version }}.noarch.rpm
+      - https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-{{ ansible_facts.distribution_version }}.noarch.rpm
+  become: true
+
+  # These are essential base packages for a functional minimal Fedora system
+- name: Install base packages required by default
+  package:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ base_packages.installed_by_default }}"
+
+  # Optional packages that provide additional functionalities or enhancements
+- name: Install optional base packages
+  package:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ base_packages.optional }}"
+  when: base_packages.optional is defined
+
+  # Core X.org and graphical interface packages for Fedora Workstation
+- name: Install X.org packages required by default
+  package:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ xorg_packages.installed_by_default }}"
+
+  # Optional X.org packages for advanced or specific graphical use cases
+- name: Install optional X.org packages
+  package:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ xorg_packages.optional }}"
+  when: xorg_packages.optional is defined
+
+# Enable and start earlyoom to prevent the system from freezing due to low memory
+- name: Enable earlyoom
+  systemd:
+    name: earlyoom
+    enabled: yes
+    masked: no
+    state: started # Ensures earlyoom starts immediately
+  become: true

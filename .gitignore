@@ -1,0 +1,35 @@
+# --------------------------------------
+# Ansible-specific ignores
+# --------------------------------------
+
+# Encrypted or sensitive variable files
+ansible/group_vars/*_vault.yml
+ansible/group_vars/*_secrets.yml
+
+# Logs and retry files generated during playbook runs
+ansible/*.log
+ansible/*.retry
+
+# Temporary directories and files
+ansible/tmp/
+
+# Role cache files (if using ansible-galaxy)
+roles/.cache/
+roles/.download/
+
+# --------------------------------------
+# General-purpose ignores
+# --------------------------------------
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# Backup and temporary files created by editors
+*.bak
+*.swp
+*.swo
+
+# OS-specific files
+.DS_Store
+Thumbs.db

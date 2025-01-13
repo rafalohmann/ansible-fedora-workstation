@@ -1,0 +1,15 @@
+---
+# Handlers for restarting services and applying configuration updates
+
+- name: restart_ssh
+  service:
+    name: sshd
+    state: restarted
+
+- name: update_grub
+  command: "{{ item }}"
+  with_items:
+    - "grub2-mkconfig -o /boot/grub2/grub.cfg" # Regenerate GRUB configuration
+    - "dracut --force --regenerate-all -v" # Rebuild initramfs to include new changes
+  when: grub_setup.changed
+  become: true

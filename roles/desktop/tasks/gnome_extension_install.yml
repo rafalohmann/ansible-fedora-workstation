@@ -1,0 +1,36 @@
+---
+- name: Extract extension ID from URL
+  ansible.builtin.set_fact:
+    extension_id: "{{ item.url.split('/')[-2] }}"
+
+- name: Fetch extension metadata
+  ansible.builtin.uri:
+    url: "https://extensions.gnome.org/extension-info/?pk={{ extension_id }}"
+    return_content: yes
+  register: extension_metadata
+
+- name: Parse metadata for UUID and versions
+  ansible.builtin.set_fact:
+    uuid: "{{ extension_metadata.json.uuid.split('@')[0] }}"
+    latest_extension_version: "{{ extension_metadata.json.shell_version_map | dict2items | max(attribute='value.version') | default({}).value.version }}"
+    latest_shell_version: "{{ extension_metadata.json.shell_version_map | dict2items | max(attribute='value.version') | default({}).key }}"
+
+- name: Download extension package
+  ansible.builtin.get_url:
+    url: "https://extensions.gnome.org/extension-data/{{ uuid }}.v{{ latest_extension_version }}.shell-extension.zip"
+    dest: "/tmp/{{ uuid }}.v{{ latest_extension_version }}.shell-extension.zip"
+
+- name: Install extension
+  ansible.builtin.command:
+    cmd: "gnome-extensions install /tmp/{{ uuid }}.v{{ latest_extension_version }}.shell-extension.zip"
+  args:
+    removes: "/tmp/{{ uuid }}.v{{ latest_extension_version }}.shell-extension.zip"
+
+- name: Print extension details
+  ansible.builtin.debug:
+    msg: |
+      For URL: {{ item.url }}
+      UUID: {{ uuid }}
+      Latest extension version: {{ latest_extension_version }}
+      Latest shell version: {{ latest_shell_version }}
+      --------------------------------------

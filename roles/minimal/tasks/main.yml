@@ -1,0 +1,29 @@
+---
+- name: Update packages
+  dnf:
+    name: "*"
+    state: latest
+  become: true
+  tags:
+    - base_distro
+    - minimal
+
+- name: Build up base distro
+  include_tasks: base_distro.yml
+  tags:
+    - base_distro
+    - minimal
+
+- name: Performance Tweaks
+  include_tasks: system_tweaks.yml
+  tags:
+    - system_tweaks
+    - minimal
+
+- name: Powersaving Tweaks
+  include_tasks: powersave.yml
+  tags: never,hardening
+
+- name: Hardening Tweaks
+  include_tasks: hardening.yml
+  tags: never,hardening

@@ -1,0 +1,100 @@
+---
+# Advanced Security Configuration
+# Includes encryption, bootloader protection, secure boot, and screen lock.
+
+# Firewall Configuration
+- name: Enable and configure firewall
+  systemd:
+    name: firewalld
+    state: started
+    enabled: true
+  tags:
+    - firewall
+    - security
+  # Firewalld is a dynamic firewall manager for secure traffic control.
+  # Reference: https://firewalld.org/documentation/
+
+# Full-Disk Encryption
+- name: Check if the root partition is encrypted
+  command: lsblk -o NAME,MOUNTPOINT,TYPE,FSTYPE
+  register: lsblk_output
+  changed_when: false
+  tags:
+    - encryption
+    - security
+
+- name: Fail if root partition is not encrypted
+  fail:
+    msg: "Root partition is not encrypted. Reinstall Fedora with LUKS encryption or enable encryption manually."
+  when: '"crypt" not in lsblk_output.stdout'
+  tags:
+    - encryption
+    - security
+
+# GRUB Hardening
+- name: Install grub2-tools if not present
+  package:
+    name: grub2-tools
+    state: present
+  tags:
+    - grub
+    - security
+
+- name: Set GRUB password
+  command: grub2-setpassword
+  notify: update_grub
+  tags:
+    - grub
+    - security
+
+# Secure Boot
+- name: Ensure Secure Boot is enabled
+  shell: mokutil --sb-state
+  register: secure_boot_status
+  changed_when: false
+  tags:
+    - secure_boot
+    - security
+
+- name: Fail if Secure Boot is disabled
+  fail:
+    msg: "Secure Boot is not enabled. Enable it in your BIOS/UEFI settings."
+  when: "'SecureBoot enabled' not in secure_boot_status.stdout"
+  tags:
+    - secure_boot
+    - security
+
+# Automatic Screen Lock
+- name: Enable GNOME screen lock
+  dconf:
+    schema: 
+    key: "org.gnome.desktop.screensaver.lock-enabled"
+    value: true
+  tags:
+    - screen_lock
+    - security
+
+- name: Set screen lock delay to 5 minutes
+  dconf:
+    schema: 
+    key: "org.gnome.desktop.session.idle-delay"
+    value: "uint32 300" # 300 seconds = 5 minutes
+  tags:
+    - screen_lock
+    - security
+
+# Disable USB Boot
+- name: Check BIOS/UEFI settings for USB boot
+  shell: "dmidecode -t bios | grep -i usb"
+  changed_when: false
+  tags:
+    - usb_boot
+    - security
+
+- name: Fail if USB boot is enabled
+  fail:
+    msg: "BIOS/UEFI settings allow USB boot. Disable USB boot in your firmware configuration."
+  when: "'USB' in result.stdout"
+  tags:
+    - usb_boot
+    - security

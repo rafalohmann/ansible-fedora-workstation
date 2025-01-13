@@ -1,0 +1,40 @@
+---
+# Install utilities for working with compressed files
+- name: Install Programs (Archive Utilities)
+  package:
+    state: present
+    name: "{{ archive_packages }}"
+  become: true
+  tags:
+    - archives
+    - utilities
+
+# Install media codecs for playback of various audio and video formats
+- name: Install Programs (Media Utilities)
+  package:
+    state: present
+    name: "{{ codecs_packages }}"
+  become: true
+  tags:
+    - codecs
+    - utilities
+
+# Install essential CLI tools
+- name: Install Programs (CLI Utilities)
+  package:
+    state: present
+    name: "{{ cli_utilities }}"
+  become: true
+  tags:
+    - cli
+    - utilities
+
+# Install graphical applications
+- name: Install Programs (Graphical Applications)
+  package:
+    state: present
+    name: "{{ graphical_applications }}"
+  become: true
+  tags:
+    - gui
+    - utilities
